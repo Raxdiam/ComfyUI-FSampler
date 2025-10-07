@@ -3,6 +3,7 @@ import torch
 import comfy.sample
 import comfy.samplers
 import comfy.utils
+import latent_preview
 from .comfy_copy import k_diffusion_sampling
 from .sampling.fibonacci_scheduler import get_fsampler_sigmas, FSAMPLER_SCHEDULERS
 from .sampling.engine import sample_fsampler
@@ -232,18 +233,8 @@ class FSamplerAdvanced:
         torch.manual_seed(seed)
         noise = torch.randn_like(latent)
 
-        # Progress bar
-        total_steps = max(0, len(sigmas) - 1)
-        progress_bar = comfy.utils.ProgressBar(total_steps)
-
-        def progress_callback(i, denoised, x, total):
-            try:
-                if hasattr(progress_bar, 'update'):
-                    progress_bar.update(1)
-                elif hasattr(progress_bar, 'update_absolute'):
-                    progress_bar.update_absolute(i + 1)
-            except Exception:
-                pass
+        # Create callback for progress bar and preview (like ComfyUI's KSampler)
+        callback = latent_preview.prepare_callback(model, steps)
 
         # Sample
         samples = sample_fsampler(
@@ -265,7 +256,7 @@ class FSamplerAdvanced:
             end_at_step=end_at_step,
             denoise=denoise,
             debug=bool(verbose),
-            callback=progress_callback,
+            callback=callback,
             protect_first_steps=protect_first_steps,
             protect_last_steps=protect_last_steps,
             anchor_interval=anchor_interval,
@@ -378,19 +369,10 @@ class FSampler:
         anchor_interval = 4
         max_consecutive_skips = 4
 
-        # Progress bar
-        total_steps = max(0, len(sigmas) - 1)
-        progress_bar = comfy.utils.ProgressBar(total_steps)
+        # Create callback for progress bar and preview (like ComfyUI's KSampler)
+        callback = latent_preview.prepare_callback(model, steps)
 
-        def progress_callback(i, denoised, x, total):
-            try:
-                if hasattr(progress_bar, 'update'):
-                    progress_bar.update(1)
-                elif hasattr(progress_bar, 'update_absolute'):
-                    progress_bar.update_absolute(i + 1)
-            except Exception:
-                pass
-
+        # Sample
         samples = sample_fsampler(
             model_patcher=model,
             noise=noise,
@@ -410,7 +392,7 @@ class FSampler:
             end_at_step=None,
             denoise=denoise,
             debug=bool(verbose),
-            callback=progress_callback,
+            callback=callback,
             protect_first_steps=protect_first_steps,
             protect_last_steps=protect_last_steps,
             anchor_interval=anchor_interval,

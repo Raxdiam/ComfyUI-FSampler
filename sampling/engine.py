@@ -360,7 +360,7 @@ def sample_fsampler(model_patcher, noise, sigmas, positive_conditioning, negativ
                 sigma_previous = sigma_current
 
                 if callback is not None:
-                    callback({'x': x, 'i': step_index, 'sigma': sigma_current, 'sigma_next': sigma_next, 'denoised': x})
+                    callback({'x': x, 'i': step_index, 'sigma': sigma_current, 'denoised': x})
 
             if debug and skip_mode != "none":
                 total = skip_stats["total_steps"]
